@@ -181,39 +181,42 @@ app.post("/save-order", async (req, res) => {
 })
 app.post("/contact", async (req, res) => {
 
-  const { name, email, country, city, message } = req.body
+console.log("Contact endpoint hit")
 
-  const adminEmail = ADMIN_EMAIL
+const { name, email, message } = req.body
 
-  try {
+console.log("Form data:", name, email, message)
 
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [adminEmail],
-      subject: "New Contact Message",
-      html: `
-        <h2>New Contact Message</h2>
+try {
 
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Country:</strong> ${country}</p>
-        <p><strong>City:</strong> ${city}</p>
+const { Resend } = require("resend")
+const resend = new Resend(process.env.RESEND_API_KEY)
 
-        <h3>Message</h3>
+const response = await resend.emails.send({
 
-        <p>${message}</p>
-      `
-    })
+from: "Gifted Hands info@giftedhandsstore.co.za",
 
-    res.json({success:true})
+to: ["info@giftedhandsstore.co.za"],
 
-  } catch(error){
+subject: "New Contact Message",
 
-    console.error(error)
+html: `
 
-    res.status(500).json({success:false})
+<h2>New message</h2> <p><strong>Name:</strong> ${name}</p> <p><strong>Email:</strong> ${email}</p> <p><strong>Message:</strong> ${message}</p> `
 
-  }
+})
+
+console.log("Email response:", response)
+
+res.status(200).json({ success: true })
+
+} catch (error) {
+
+console.error("Email send error:", error)
+
+res.status(500).json({ error: "Email failed" })
+
+}
 
 })
 
