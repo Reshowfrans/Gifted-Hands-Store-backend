@@ -189,12 +189,9 @@ console.log("Form data:", name, email, message)
 
 try {
 
-const { Resend } = require("resend")
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const response = await resend.emails.send({
 
-from: "Gifted Hands info@giftedhandsstore.co.za",
+from: "Gifted Hands <info@giftedhandsstore.co.za>",
 
 to: ["info@giftedhandsstore.co.za"],
 
