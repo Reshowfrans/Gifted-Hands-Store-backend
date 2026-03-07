@@ -181,39 +181,39 @@ app.post("/save-order", async (req, res) => {
 })
 app.post("/contact", async (req, res) => {
 
-console.log("Contact endpoint hit")
+    console.log("Contact endpoint hit")
 
-const { name, email, message } = req.body
+    const { name, email, message } = req.body
 
-console.log("Form data:", name, email, message)
+    console.log("Form data:", name, email, message)
 
-try {
+    try {
 
-const response = await resend.emails.send({
+    const response = await resend.emails.send({
 
-from: "Gifted Hands <info@giftedhandsstore.co.za>",
+    from: "info@giftedhandsstore.co.za",
 
-to: ["info@giftedhandsstore.co.za"],
+    to: ["info@giftedhandsstore.co.za"],
 
-subject: "New Contact Message",
+    subject: "New Contact Message",
 
-html: `
+    html: `
 
-<h2>New message</h2> <p><strong>Name:</strong> ${name}</p> <p><strong>Email:</strong> ${email}</p> <p><strong>Message:</strong> ${message}</p> `
+    <h2>New message</h2> <p><strong>Name:</strong> ${name}</p> <p><strong>Email:</strong> ${email}</p> <p><strong>Message:</strong> ${message}</p> `
 
-})
+    })
 
-console.log("Email response:", response)
+    console.log("Email response:", response)
 
-res.status(200).json({ success: true })
+    res.status(200).json({ success: true })
 
-} catch (error) {
+    } catch (error) {
 
-console.error("Email send error:", error)
+    console.error("Email send error:", error)
 
-res.status(500).json({ error: "Email failed" })
+    res.status(500).json({ error: "Email failed" })
 
-}
+    }
 
 })
 
