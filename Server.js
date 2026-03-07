@@ -12,6 +12,9 @@ app.use(express.json())
 const resend = new Resend(process.env.RESEND_API_KEY)
 console.log("Resend key loaded:", process.env.RESEND_API_KEY ? "YES" : "NO")
 
+const FROM_EMAIL = process.env.FROM_EMAIL || "info@giftedhandsstore.co.za"
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "info@giftedhandsstore.co.za"
+
 
 
 /* PAYSTACK TEMPORARILY DISABLED
@@ -78,8 +81,9 @@ app.get("/verify-payment/:reference", async (req, res) => {
 
 app.post("/save-order", async (req, res) => {
 
-  const { orderId, email, items, amount } = req.body
-  const adminEmail = "sirnetshi@icloud.com"
+  const { orderId, providerOrderId, email, items, amount } = req.body
+  const finalOrderId = orderId || providerOrderId || "(no-order-id)"
+  const adminEmail = ADMIN_EMAIL
   console.log("Order received", req.body)
   try {
 
@@ -108,7 +112,7 @@ app.post("/save-order", async (req, res) => {
         `).join("")
 
     await resend.emails.send({
-  from: "onboarding@resend.dev",
+  from: "info@giftedhandsstore.co.za",
   to: [adminEmail],
   subject: "New Order Received",
   html: `
@@ -116,7 +120,7 @@ app.post("/save-order", async (req, res) => {
 
           <h2>New Order Received</h2>
 
-          <p><strong>Order ID:</strong> ${orderId}</p>
+          <p><strong>Order ID:</strong> ${finalOrderId}</p>
           <p><strong>Customer Email:</strong> ${email}</p>
           <p><strong>Total Paid:</strong> $${amount}</p>
 
@@ -146,7 +150,7 @@ app.post("/save-order", async (req, res) => {
     })
 
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "info@giftedhandsstore.co.za",
       to: [email],
       subject: "Your Gifted Hands Order Confirmation",
       html: `
@@ -179,12 +183,12 @@ app.post("/contact", async (req, res) => {
 
   const { name, email, country, city, message } = req.body
 
-  const adminEmail = "rendanir50@gmail.com"
+  const adminEmail = ADMIN_EMAIL
 
   try {
 
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: FROM_EMAIL,
       to: [adminEmail],
       subject: "New Contact Message",
       html: `
@@ -216,6 +220,8 @@ app.post("/contact", async (req, res) => {
 
 
 
-app.listen(4242, () => {
-  console.log("Server running on port 4242")
+const PORT = process.env.PORT || 4242
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
 })
