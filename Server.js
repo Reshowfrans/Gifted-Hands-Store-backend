@@ -56,7 +56,7 @@ app.post("/save-order", async (req, res) => {
     /* ADMIN EMAIL */
 
     await resend.emails.send({
-      from: `Gifted Hands <${FROM_EMAIL}>`,
+      from: `info@giftedhandsstore.co.za`,
       to: [ADMIN_EMAIL],
       subject: "New Order Received",
       html: `
@@ -98,7 +98,7 @@ app.post("/save-order", async (req, res) => {
     /* CUSTOMER EMAIL */
 
     await resend.emails.send({
-      from: `Gifted Hands <${FROM_EMAIL}>`,
+      from: `info@giftedhandsstore.co.za`,
       to: [email],
       subject: "Your Gifted Hands Order Confirmation",
       html: `
@@ -145,7 +145,7 @@ app.post("/contact", async (req, res) => {
 
     await resend.emails.send({
 
-      from: `Gifted Hands <${FROM_EMAIL}>`,
+      from: `info@giftedhandsstore.co.za`,
 
       to: [ADMIN_EMAIL],
 
@@ -245,7 +245,7 @@ app.post("/custom-request", async (req, res) => {
     /* ADMIN EMAIL */
 
     await resend.emails.send({
-      from: `Gifted Hands <${FROM_EMAIL}>`,
+      from: `info@giftedhandsstore.co.za`,
       to: [ADMIN_EMAIL],
       subject: "New Custom Design Request",
       html: messageHtml
@@ -256,7 +256,7 @@ app.post("/custom-request", async (req, res) => {
     /* CUSTOMER CONFIRMATION */
 
     await resend.emails.send({
-      from: `Gifted Hands <${FROM_EMAIL}>`,
+      from: `info@giftedhandsstore.co.za`,
       to: [email],
       subject: "Your Custom Design Request Was Received",
       html: `
