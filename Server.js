@@ -1,7 +1,7 @@
 require("dotenv").config()
+
 const express = require("express")
 const cors = require("cors")
-const axios = require("axios")
 const { Resend } = require("resend")
 
 const app = express()
@@ -10,6 +10,7 @@ app.use(cors())
 app.use(express.json())
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
 console.log("Resend key loaded:", process.env.RESEND_API_KEY ? "YES" : "NO")
 
 const FROM_EMAIL = process.env.FROM_EMAIL || "info@giftedhandsstore.co.za"
@@ -17,140 +18,87 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "info@giftedhandsstore.co.za"
 
 
 
-/* PAYSTACK TEMPORARILY DISABLED
-
-app.post("/initialize-payment", async (req, res) => {
-  const { email, amount } = req.body
-
-  if (!email || !amount) {
-    return res.status(400).json({
-      error: "email and amount are required",
-    })
-  }
-
-  try {
-    const response = await axios.post(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        email,
-        amount,
-        callback_url: "http://localhost:5173/payment-success",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    )
-
-    return res.json(response.data)
-
-  } catch (error) {
-    return res.status(400).json({
-      error: error.response?.data || error.message,
-    })
-  }
-})
-
-app.get("/verify-payment/:reference", async (req, res) => {
-  const { reference } = req.params
-
-  try {
-    const response = await axios.get(
-      `https://api.paystack.co/transaction/verify/${reference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        },
-      }
-    )
-
-    return res.json(response.data)
-
-  } catch (error) {
-    return res.status(400).json({
-      error: error.response?.data || error.message,
-    })
-  }
-})
-
-*/
-
-
+/* ===============================
+   ORDER EMAILS
+================================ */
 
 app.post("/save-order", async (req, res) => {
 
   const { orderId, providerOrderId, email, items, amount } = req.body
   const finalOrderId = orderId || providerOrderId || "(no-order-id)"
-  const adminEmail = ADMIN_EMAIL
+
   console.log("Order received", req.body)
+
   try {
 
-    const itemsList = items
-      .map(i => `${i.title} x${i.quantity}`)
-      .join("<br/>")
+    const itemsHtml = items.map(item => `
+      <tr>
+        <td style="padding:10px;border-bottom:1px solid #eee;">
+          <img src="${item.image}" width="120" style="border-radius:6px;" />
+        </td>
 
-      const itemsHtml = items.map(item => `
-          <tr>
-            <td style="padding:10px;border-bottom:1px solid #eee;">
-              <img src="${item.image}" width="120" style="border-radius:6px;" />
-            </td>
+        <td style="padding:10px;border-bottom:1px solid #eee;">
+          <strong>${item.title}</strong>
+        </td>
 
-            <td style="padding:10px;border-bottom:1px solid #eee;">
-              <strong>${item.title}</strong>
-            </td>
+        <td style="padding:10px;border-bottom:1px solid #eee;">
+          ${item.quantity}
+        </td>
 
-            <td style="padding:10px;border-bottom:1px solid #eee;">
-              ${item.quantity}
-            </td>
+        <td style="padding:10px;border-bottom:1px solid #eee;">
+          $${(item.price * item.quantity).toFixed(2)}
+        </td>
+      </tr>
+    `).join("")
 
-            <td style="padding:10px;border-bottom:1px solid #eee;">
-              $${(item.price * item.quantity).toFixed(2)}
-            </td>
-          </tr>
-        `).join("")
+
+
+    /* ADMIN EMAIL */
 
     await resend.emails.send({
-  from: "info@giftedhandsstore.co.za",
-  to: [adminEmail],
-  subject: "New Order Received",
-  html: `
-        <div style="font-family:Arial, sans-serif; max-width:650px; margin:auto;">
+      from: `Gifted Hands <${FROM_EMAIL}>`,
+      to: [ADMIN_EMAIL],
+      subject: "New Order Received",
+      html: `
+      <div style="font-family:Arial, sans-serif; max-width:650px; margin:auto;">
 
-          <h2>New Order Received</h2>
+        <h2>New Order Received</h2>
 
-          <p><strong>Order ID:</strong> ${finalOrderId}</p>
-          <p><strong>Customer Email:</strong> ${email}</p>
-          <p><strong>Total Paid:</strong> $${amount}</p>
+        <p><strong>Order ID:</strong> ${finalOrderId}</p>
+        <p><strong>Customer Email:</strong> ${email}</p>
+        <p><strong>Total Paid:</strong> $${amount}</p>
 
-          <h3 style="margin-top:30px;">Order Items</h3>
+        <h3 style="margin-top:30px;">Order Items</h3>
 
-          <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-            <thead>
-              <tr style="text-align:left;border-bottom:2px solid #ddd;">
-                <th style="padding:10px;">Preview</th>
-                <th style="padding:10px;">Design</th>
-                <th style="padding:10px;">Qty</th>
-                <th style="padding:10px;">Price</th>
-              </tr>
-            </thead>
+        <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+          <thead>
+            <tr style="text-align:left;border-bottom:2px solid #ddd;">
+              <th style="padding:10px;">Preview</th>
+              <th style="padding:10px;">Design</th>
+              <th style="padding:10px;">Qty</th>
+              <th style="padding:10px;">Price</th>
+            </tr>
+          </thead>
 
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-          </table>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
 
-          <p style="margin-top:30px;">
-            Please prepare and send the final design files to the client.
-          </p>
+        <p style="margin-top:30px;">
+          Please prepare and send the final design files to the client.
+        </p>
 
-        </div>
+      </div>
       `
     })
 
+
+
+    /* CUSTOMER EMAIL */
+
     await resend.emails.send({
-      from: "info@giftedhandsstore.co.za",
+      from: `Gifted Hands <${FROM_EMAIL}>`,
       to: [email],
       subject: "Your Gifted Hands Order Confirmation",
       html: `
@@ -158,7 +106,7 @@ app.post("/save-order", async (req, res) => {
 
         <p>Thank you for your purchase.</p>
 
-        <p><strong>Order Reference:</strong> ${orderId}</p>
+        <p><strong>Order Reference:</strong> ${finalOrderId}</p>
         <p><strong>Total Paid:</strong> $${amount}</p>
 
         <p>Your design files will be prepared and sent to you within 24 hours.</p>
@@ -168,60 +116,186 @@ app.post("/save-order", async (req, res) => {
         <p>Gifted Hands</p>
       `
     })
-    
+
     res.json({ success: true })
 
   } catch (error) {
 
-    console.error("Resend error:", error)
+    console.error("Order email error:", error)
+
     res.status(500).json({ success: false })
 
   }
 
 })
+
+
+
+/* ===============================
+   CONTACT FORM
+================================ */
+
 app.post("/contact", async (req, res) => {
 
-    console.log("Contact endpoint hit")
+  const { name, email, message } = req.body
 
-    const { name, email, message } = req.body
+  console.log("Contact request:", req.body)
 
-    console.log("Form data:", name, email, message)
+  try {
 
-    try {
+    await resend.emails.send({
 
-    const response = await resend.emails.send({
+      from: `Gifted Hands <${FROM_EMAIL}>`,
 
-    from: "info@giftedhandsstore.co.za",
+      to: [ADMIN_EMAIL],
 
-    to: ["info@giftedhandsstore.co.za"],
+      subject: "New Contact Message",
 
-    subject: "New Contact Message",
+      html: `
+        <h2>New Contact Message</h2>
 
-    html: `
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
 
-    <h2>New message</h2> <p><strong>Name:</strong> ${name}</p> <p><strong>Email:</strong> ${email}</p> <p><strong>Message:</strong> ${message}</p> `
+        <h3>Message</h3>
+
+        <p>${message}</p>
+      `
 
     })
 
-    console.log("Email response:", response)
+    res.json({ success: true })
 
-    res.status(200).json({ success: true })
+  } catch (error) {
 
-    } catch (error) {
+    console.error("Contact email error:", error)
 
-    console.error("Email send error:", error)
+    res.status(500).json({ success: false })
 
-    res.status(500).json({ error: "Email failed" })
-
-    }
+  }
 
 })
 
 
 
+/* ===============================
+   CUSTOM DESIGN REQUEST
+================================ */
+
+app.post("/custom-request", async (req, res) => {
+
+  const {
+    fullName,
+    email,
+    phone,
+    company,
+    city,
+    environment,
+    stageWidth,
+    stageDepth,
+    stageHeight,
+    venueWidth,
+    venueDepth,
+    venueHeight,
+    units,
+    designBrief,
+    venueFiles,
+    floorFiles,
+    referenceFiles
+  } = req.body
+
+  console.log("Custom request received:", req.body)
+
+  try {
+
+    const filesList = [
+      ...(venueFiles || []),
+      ...(floorFiles || []),
+      ...(referenceFiles || [])
+    ].join("<br/>")
+
+
+
+    const messageHtml = `
+
+      <h2>New Custom Design Request</h2>
+
+      <p><strong>Name:</strong> ${fullName}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Phone:</strong> ${phone}</p>
+      <p><strong>Company:</strong> ${company}</p>
+      <p><strong>City:</strong> ${city}</p>
+      <p><strong>Environment:</strong> ${environment}</p>
+
+      <h3>Stage Dimensions</h3>
+      <p>${stageWidth} x ${stageDepth} x ${stageHeight} ${units}</p>
+
+      <h3>Venue Dimensions</h3>
+      <p>${venueWidth} x ${venueDepth} x ${venueHeight} ${units}</p>
+
+      <h3>Design Brief</h3>
+      <p>${designBrief}</p>
+
+      <h3>Uploaded Files</h3>
+      <p>${filesList}</p>
+    `
+
+
+
+    /* ADMIN EMAIL */
+
+    await resend.emails.send({
+      from: `Gifted Hands <${FROM_EMAIL}>`,
+      to: [ADMIN_EMAIL],
+      subject: "New Custom Design Request",
+      html: messageHtml
+    })
+
+
+
+    /* CUSTOMER CONFIRMATION */
+
+    await resend.emails.send({
+      from: `Gifted Hands <${FROM_EMAIL}>`,
+      to: [email],
+      subject: "Your Custom Design Request Was Received",
+      html: `
+        <h2>Thank you for your request</h2>
+
+        <p>Hello ${fullName},</p>
+
+        <p>We have received your custom stage design request.</p>
+
+        <p>Our team will review your venue details and contact you within 24 to 48 hours.</p>
+
+        <p>If you have additional references you can reply to this email.</p>
+
+        <p>Gifted Hands</p>
+      `
+    })
+
+    res.json({ success: true })
+
+  } catch (error) {
+
+    console.error("Custom request email error:", error)
+
+    res.status(500).json({ success: false })
+
+  }
+
+})
+
+
+
+/* ===============================
+   SERVER START
+================================ */
 
 const PORT = process.env.PORT || 4242
 
 app.listen(PORT, () => {
+
   console.log(`Server running on port ${PORT}`)
+
 })
